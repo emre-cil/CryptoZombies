@@ -1,0 +1,58 @@
+# Chapter 8: Constructor in a constructor
+
+You got it! The `VRFConsumerbase` contract includes all the code we need to send a request to a Chainlink oracle, including all the event logging code.
+
+Now, as we said, to interact with a Chainlink node, we need to know a few variables.
+
+- The address of the Chainlink token contract. This is needed so our contract can tell if we have enough `LINK` tokens to pay for the gas.
+- The VRF coordinator contract address. This is needed to verify that the number we get is actually random.
+- The Chainlink node keyhash. This is used identify which Chainlink node we want to work with.
+- The Chainlink node fee. This represents the fee (gas) the Chainlink will charge us, expressed in `LINK` tokens.
+
+You can find all these variables in the [Chainlink VRF Contract addresses documentation page](https://docs.chain.link/docs/vrf-contracts/). Once again, the addresses will be different across networks, but for the scope of this lesson we will again be working with the Rinkeby network.
+
+As said in the last lesson, we are going to inherit the functionality of this VRFConsumerbase. But how do we implement a constructor of an inherited contract? And the answer is that we can have a constructor in a constructor.
+
+Let's take a look at this sample code:
+
+```
+import "./Y.sol";
+contract X is Y {
+    constructor() Y() public{
+    }
+}
+
+```
+
+To use a constructor of an inherited contract, we just put the constructor declaration as part of our contract's constructor.
+
+We can do the same thing with the `VRFConsumerbase` contract:
+
+```
+constructor() VRFConsumerBase(
+    0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
+    0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
+) public{
+
+}
+
+```
+
+## Putting it to the test
+
+1.  Have our `ZombieFactory` contract inherit from the `VRFConsumerbase` contract. If you don't remember the syntax, here's an example:
+
+    ```
+    // Create a contract named `parent`
+    contract parent {
+
+    }
+
+    // Create a contract named `child` that inherits from `parent`
+    contract child is parent {
+
+    }
+
+    ```
+
+2.  Create a constructor for the `ZombieFactory` contract that calls the constructor of the `VRFConsumerBase` contract, passing with addresses of the VRF Coordinator and LINK token contract from the Rinkeby network as arguments. Leave the body of the constructor empty. You can copy and paste the addresses from the example above or get them from the [Chainlink VRF Contract Addresses](https://docs.chain.link/docs/vrf-contracts/#rinkeby) page of the Chainlink documentation. Again, if you don't remember the syntax, check the example we provided above.

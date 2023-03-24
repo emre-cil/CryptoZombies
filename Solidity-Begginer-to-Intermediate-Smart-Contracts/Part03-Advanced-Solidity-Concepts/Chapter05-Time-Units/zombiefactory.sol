@@ -1,40 +1,43 @@
+pragma solidity >=0.5.0 <0.6.0;
 
-# Chapter 6: Zombie Cooldowns
+import "./ownable.sol";
 
-Now that we have a  `readyTime`  property on our  `Zombie`  struct, let's jump to  `zombiefeeding.sol`  and implement a cooldown timer.
+contract ZombieFactory is Ownable {
 
-We're going to modify our  `feedAndMultiply`  such that:
+    event NewZombie(uint zombieId, string name, uint dna);
 
-1.  Feeding triggers a zombie's cooldown, and
-    
-2.  Zombies can't feed on kitties until their cooldown period has passed
-    
+    uint dnaDigits = 16;
+    uint dnaModulus = 10 ** dnaDigits;
 
-This will make it so zombies can't just feed on unlimited kitties and multiply all day. In the future when we add battle functionality, we'll make it so attacking other zombies also relies on the cooldown.
+    struct Zombie {
+        string name;
+        uint dna;
+        uint32 level;
+        uint32 readyTime;
+    }
 
-First, we're going to define some helper functions that let us set and check a zombie's  `readyTime`.
+    Zombie[] public zombies;
 
-## Passing structs as arguments
+    mapping (uint => address) public zombieToOwner;
+    mapping (address => uint) ownerZombieCount;
 
-You can pass a storage pointer to a struct as an argument to a  `private`  or  `internal`  function. This is useful, for example, for passing around our  `Zombie`  structs between functions.
+    function _createZombie(string memory _name, uint _dna) internal {
+        uint id = zombies.push(Zombie(_name, _dna)) - 1;
+        zombieToOwner[id] = msg.sender;
+        ownerZombieCount[msg.sender]++;
+        emit NewZombie(id, _name, _dna);
+    }
 
-The syntax looks like this:
+    function _generateRandomDna(string memory _str) private view returns (uint) {
+        uint rand = uint(keccak256(abi.encodePacked(_str)));
+        return rand % dnaModulus;
+    }
 
-```
-function _doStuff(Zombie storage _zombie) internal {
-  // do stuff with _zombie
+    function createRandomZombie(string memory _name) public {
+        require(ownerZombieCount[msg.sender] == 0);
+        uint randDna = _generateRandomDna(_name);
+        randDna = randDna - randDna % 100;
+        _createZombie(_name, randDna);
+    }
+
 }
-
-```
-
-This way we can pass a reference to our zombie into a function instead of passing in a zombie ID and looking it up.
-
-## Put it to the test
-
-1.  Start by defining a  `_triggerCooldown`  function. It will take 1 argument,  `_zombie`, a  `Zombie storage`  pointer. The function should be  `internal`.
-    
-2.  The function body should set  `_zombie.readyTime`  to  `uint32(now + cooldownTime)`.
-    
-3.  Next, create a function called  `_isReady`. This function will also take a  `Zombie storage`  argument named  `_zombie`. It will be an  `internal view`  function, and return a  `bool`.
-    
-4.  The function body should return  `(_zombie.readyTime <= now)`, which will evaluate to either  `true`  or  `false`. This function will tell us if enough time has passed since the last time the zombie fed.
