@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "loom-truffle-provider": "^0.13.0",
+    "truffle-hdwallet-provider": "^1.0.17"
+  }
+}

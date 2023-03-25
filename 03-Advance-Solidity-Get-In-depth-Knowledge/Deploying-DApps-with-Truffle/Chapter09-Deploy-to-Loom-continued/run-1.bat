@@ -1,0 +1,1 @@
+truffle migrate --network loom_testnet
